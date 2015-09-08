@@ -11,7 +11,7 @@ Support for single-quotes, `'`, and/or raw quotes `\`` may be added.
 ### Line comment
 For line comments, by default, nocomment interprets `#` and `//` as the beginning of a line comment. Line comments are terminated when a new line is encountered.
 
-There are toggles for whether or not an octothorpe. `#`, or a double slash, `//` should be accepted as the beginning of a line comment. While it is possible to have both enabled, which is nocomment's default, it is not possible to turn both off. Toggling one off will automatically enable the other option.
+There are toggles for whether or not an octothorpe (hash), `#`, or a double slash, `//` should be accepted as the beginning of a line comment.  By default, both types of line comments are enabled.  Disabling both types of line comments will result in no line comments, which is probably not desirable.
 
 ### Block comment
 Nocomment uses C style block comments, `/* */`. Block comments may span new lines.
