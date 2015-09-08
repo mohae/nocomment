@@ -7,12 +7,11 @@
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-package decomment
+package nocomment
 
 import (
 	"fmt"
 	"strings"
-	//"unicode"
 	"unicode/utf8"
 )
 
@@ -41,7 +40,6 @@ const blockCommentBegin = "/*"
 const blockCommentEnd = "*/"
 const cr = '\r'
 const nl = '\n'
-
 type tokenType int
 
 const (
@@ -54,6 +52,7 @@ const (
 	tokenBlockCommentEnd   // */
 	tokenNL                // \n
 	tokenCR                // \r
+	tokenQuotedText       // "
 )
 
 var key = map[string]tokenType{
@@ -63,6 +62,7 @@ var key = map[string]tokenType{
 	"*/": tokenBlockCommentEnd,
 	"\n": tokenNL,
 	"\r": tokenCR,
+
 }
 
 type commentType int
@@ -98,6 +98,7 @@ type lexer struct {
 	tokens     chan token // channel of scanned tokens
 	parenDepth int        // nesting depth of () exprs <- probably not needed
 	commentTyp commentType
+	allowSingleQuote bool // whether or not `'` is supported as a quote char.
 }
 
 // accept consumes the next rune if it's from the valid set.
@@ -151,7 +152,7 @@ func (l *lexer) next() rune {
 	return r
 }
 
-// nextItem returns the next item from the input.
+// nextToken returns the next token from the input.
 func (l *lexer) nextToken() token {
 	for {
 		select {
@@ -256,6 +257,26 @@ func lexNewLine(l *lexer) stateFn {
 	return lexText
 }
 
+// lexQuote processes everything within ""
+func lexQuote(l *lexer ) stateFn {
+	// consume the start quote
+	l.next()
+Loop:
+	for {
+		switch l.next() {
+		case eof:
+			return l.errorf("unterminated quoted string")
+		case '\\':
+			if l.peek() == '"' {
+				l.next() // skip it
+			}
+		case '"':
+			break Loop
+		}
+	}
+	l.emit(tokenQuotedText)
+	return lexText
+}
 // stateFn to process input and tokenize things
 func lexText(l *lexer) stateFn {
 	for {
@@ -280,23 +301,28 @@ func lexText(l *lexer) stateFn {
 			l.commentTyp = commentBlock
 			return lexBlockComment
 		}
-		t := l.peek()
-		if t == cr {
+		switch l.peek() {
+		case cr:
 			if l.pos > l.start {
 				l.emit(tokenText)
 			}
 			return lexReturn
-		}
-		if t == nl {
+		case nl:
 			if l.pos > l.start {
 				l.emit(tokenText)
 			}
 			return lexNewLine
+		case '"':
+			if l.pos > l.start {
+				l.emit(tokenText)
+			}
+			return lexQuote
+		case eof:
+			goto Done
 		}
-		if l.next() == eof {
-			break
-		}
+		l.next()
 	}
+Done:
 	// Correctly reached EOF.
 	if l.pos > l.start {
 		l.emit(tokenText)

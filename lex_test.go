@@ -7,7 +7,7 @@
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-package decomment
+package nocomment
 
 import (
 	"testing"
@@ -74,6 +74,8 @@ var lextTests = []lexTest{
 		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
 	{"simpleBlockCommentMultiLineCRNL", "/*this\r\n is a\r\n comment\r\n*/Hello World\r\n",
 		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
+	{"noCommentQuotedText", `This is some text. "#This is not a comment // neither is this /* or this */" sooo, no comments!`,
+		[]token{{tokenText, 0, "This is some text. "}, {tokenQuotedText, 0, `"#This is not a comment // neither is this /* or this */"`}, {tokenText, 0, " sooo, no comments!"}, tEOF}},
 }
 
 // collect gathers the emitted items into a slice.
