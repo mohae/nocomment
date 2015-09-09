@@ -2,8 +2,9 @@
 // This code is governed by the MIT license, please
 // refer to the LICENSE file.
 //
-// the design of these tests is based on the tests in
-// http://golang.org/src/text/template/parse/lex_test.go
+// This code is based on
+// http://golang.org/src/text/template/parse/lex.go
+//
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.

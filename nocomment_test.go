@@ -1,3 +1,6 @@
+// Copyright 2015 Joel Scoble.
+// This code is governed by the MIT license, please
+// refer to the LICENSE file.
 package nocomment
 
 import (
@@ -25,12 +28,12 @@ var stripperTests = []stripperTest{
       "\r\nHello World"},
 }
 
-type cleanTest struct {
+type stripperTest struct {
   name string
   input []byte
   output string
 }
-var cleanTests = []cleanTest{
+var stripperTests = []stripperTest{
 		{"Empty", []byte(""), ""},
 		{"line comments", []byte("//this is a comment\rHello World# another comment\r"), "Hello World"},
 		{"blockComments", []byte("/* block comment\r\n*/\r\nHello World"), "\r\nHello World"},

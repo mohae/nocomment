@@ -1,3 +1,6 @@
+// Copyright 2015 Joel Scoble.
+// This code is governed by the MIT license, please
+// refer to the LICENSE file.
 package nocomment
 
 // Stripper handles the elision of comments from text.
