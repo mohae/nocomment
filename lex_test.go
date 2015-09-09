@@ -23,7 +23,7 @@ var tEOF = token{tokenEOF, 0, ""}
 var tNL = token{tokenNL, 0, "\n"}
 var tCR = token{tokenCR, 0, "\r"}
 
-var lextTests = []lexTest{
+var lexTests = []lexTest{
 	{"empty", "", []token{tEOF}},
 	{"justText", "hello world", []token{{tokenText, 0, "hello world"}, tEOF}},
 	{"simpleLineCommentSlashNL", "//this is a comment\nHello World\n",
@@ -78,6 +78,26 @@ var lextTests = []lexTest{
 		[]token{{tokenText, 0, "This is some text. "}, {tokenQuotedText, 0, `"#This is not a comment // neither is this /* or this */"`}, {tokenText, 0, " sooo, no comments!"}, tEOF}},
 }
 
+type lineLexTest struct {
+	name string
+	ignoreHash bool
+	ignoreSlash bool
+	input string
+	tokens []token
+}
+
+var lineLexTests = []lineLexTest{
+		{"ignoreBothEmpty", true, true, "", []token{tEOF}},
+		{"ignoreBoth", true, true, "//this is a comment\rHello World# another comment\r",
+			[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
+		{"ignoreNeither", false, false, "//this is a comment\rHello World# another comment\r",
+			[]token{{tokenText, 0, "Hello World"}, tEOF}},
+		{"ignoreSlash", false, true, "//this is a comment\rHello World# another comment\r",
+			[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World"}, tEOF}},
+		{"ignoreHash", true, false, "//this is a comment\rHello World# another comment\r",
+			[]token{{tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
+}
+
 // collect gathers the emitted items into a slice.
 func collect(t *lexTest, left, right string) (tokens []token) {
 	l := lex(t.name, t.input)
@@ -88,7 +108,23 @@ func collect(t *lexTest, left, right string) (tokens []token) {
 			break
 		}
 	}
-	return
+	return tokens
+}
+
+// collectLineTests handles testing of enabling/disabling of line comment styles
+func collectLineTest(t *lineLexTest) (tokens []token) {
+	l := NewLexer(t.name, t.input)
+	l.SetIgnoreHash(t.ignoreHash)
+	l.SetIgnoreSlash(t.ignoreSlash)
+	go l.Run()
+	for {
+		token := l.nextToken()
+		tokens = append(tokens, token)
+		if token.typ == tokenEOF || token.typ == tokenError {
+			break
+		}
+	}
+	return tokens
 }
 
 func equal(i1, i2 []token, checkPos bool) bool {
@@ -109,9 +145,20 @@ func equal(i1, i2 []token, checkPos bool) bool {
 	return true
 }
 
+// test comment lexing
 func TestLex(t *testing.T) {
-	for _, test := range lextTests {
+	for _, test := range lexTests {
 		tokens := collect(&test, "", "")
+		if !equal(tokens, test.tokens, false) {
+			t.Errorf("%s: got \n\t%+v\nexpected\n\t%v", test.name, tokens, test.tokens)
+		}
+	}
+}
+
+// test enabling/disabling different line comment types
+func TestLineLex(t *testing.T) {
+	for _, test := range lineLexTests {
+		tokens := collectLineTest(&test)
 		if !equal(tokens, test.tokens, false) {
 			t.Errorf("%s: got \n\t%+v\nexpected\n\t%v", test.name, tokens, test.tokens)
 		}

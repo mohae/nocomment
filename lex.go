@@ -98,7 +98,28 @@ type lexer struct {
 	tokens     chan token // channel of scanned tokens
 	parenDepth int        // nesting depth of () exprs <- probably not needed
 	commentTyp commentType
+	ignoreHash bool
+	ignoreSlash bool
 	allowSingleQuote bool // whether or not `'` is supported as a quote char.
+}
+
+func NewLexer(name, input string ) *lexer {
+	return &lexer{
+		name: name,
+		input: input,
+		state:  lexText,
+		tokens: make(chan token, 2),
+	}
+}
+
+// SetIgnoreHash set's whether or not # is the start of a line comment
+func (l *lexer) SetIgnoreHash(b bool) {
+		l.ignoreHash = b
+}
+
+// SetIgnoreSlash set's whether or not // is the start of a line comment
+func (l *lexer) SetIgnoreSlash(b bool) {
+		l.ignoreSlash = b
 }
 
 // accept consumes the next rune if it's from the valid set.
@@ -173,7 +194,7 @@ func (l *lexer) peek() rune {
 }
 
 // run lexes the input by executing state functions until the state is nil.
-func (l *lexer) run() {
+func (l *lexer) Run() {
 	for state := lexText; state != nil; {
 		state = state(l)
 	}
@@ -187,7 +208,7 @@ func lex(name, input string) *lexer {
 		state:  lexText,
 		tokens: make(chan token, 2),
 	}
-	go l.run() // concurrently run state machine
+	go l.Run() // concurrently run state machine
 	return l
 }
 
@@ -195,6 +216,9 @@ func lex(name, input string) *lexer {
 // Line comments start with either # or // and end with a new line.
 func lexLineComment(l *lexer) stateFn {
 	// based on type consume the start
+	if l.pos > l.start {
+		l.emit(tokenText)
+	}
 	switch l.commentTyp {
 	case commentSlash:
 		l.pos += Pos(len(lineCommentSlash))
@@ -227,6 +251,9 @@ func lexLineComment(l *lexer) stateFn {
 // Block comments start with a /* and end with */. They may
 // span new lines
 func lexBlockComment(l *lexer) stateFn {
+	if l.pos > l.start {
+		l.emit(tokenText)
+	}
 	l.pos += Pos(len(blockCommentBegin))
 	// find end of comment or error if none
 	i := strings.Index(l.input[l.pos:], blockCommentEnd)
@@ -280,24 +307,19 @@ Loop:
 // stateFn to process input and tokenize things
 func lexText(l *lexer) stateFn {
 	for {
-		if strings.HasPrefix(l.input[l.pos:], lineCommentSlash) {
-			if l.pos > l.start {
-				l.emit(tokenText)
+		if !l.ignoreSlash {
+			if strings.HasPrefix(l.input[l.pos:], lineCommentSlash) {
+				l.commentTyp = commentSlash
+				return lexLineComment // next state
 			}
-			l.commentTyp = commentSlash
-			return lexLineComment // next state
 		}
-		if strings.HasPrefix(l.input[l.pos:], lineCommentHash) {
-			if l.pos > l.start {
-				l.emit(tokenText)
+		if !l.ignoreHash {
+			if strings.HasPrefix(l.input[l.pos:], lineCommentHash) {
+				l.commentTyp = commentHash
+				return lexLineComment
 			}
-			l.commentTyp = commentHash
-			return lexLineComment
 		}
 		if strings.HasPrefix(l.input[l.pos:], blockCommentBegin) {
-			if l.pos > l.start {
-				l.emit(tokenText)
-			}
 			l.commentTyp = commentBlock
 			return lexBlockComment
 		}
