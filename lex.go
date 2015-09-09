@@ -10,6 +10,7 @@
 package nocomment
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -34,12 +35,15 @@ func (t token) String() string {
 	return fmt.Sprintf("%q", t.value)
 }
 
-const lineCommentSlash = "//"
-const lineCommentHash = "#"
-const blockCommentBegin = "/*"
-const blockCommentEnd = "*/"
-const cr = '\r'
-const nl = '\n'
+const (
+	lineCommentSlash = "//"
+	lineCommentHash = "#"
+	blockCommentBegin = "/*"
+ 	blockCommentEnd = "*/"
+	cr = '\r'
+	nl = '\n'
+)
+
 type tokenType int
 
 const (
@@ -87,7 +91,7 @@ type stateFn func(*lexer) stateFn
 
 type lexer struct {
 	name       string     // the name of the imput; used for errors
-	input      string     // the string being scanned
+	input      []byte     // the string being scanned
 	state      stateFn    // the next lexing function to enter
 	pos        Pos        // current position of this item
 	start      Pos        // start position of this item
@@ -101,7 +105,7 @@ type lexer struct {
 	allowSingleQuote bool // whether or not `'` is supported as a quote char.
 }
 
-func NewLexer(name, input string ) *lexer {
+func NewLexer(name string, input []byte ) *lexer {
 	return &lexer{
 		name: name,
 		input: input,
@@ -143,7 +147,7 @@ func (l *lexer) backup() {
 
 // emit passes an item back to the client.
 func (l *lexer) emit(t tokenType) {
-	l.tokens <- token{t, l.start, l.input[l.start:l.pos]}
+	l.tokens <- token{t, l.start, string(l.input[l.start:l.pos])}
 	l.start = l.pos
 }
 
@@ -165,7 +169,7 @@ func (l *lexer) next() rune {
 		l.width = 0
 		return eof
 	}
-	r, w := utf8.DecodeRuneInString(l.input[l.pos:])
+	r, w := utf8.DecodeRune(l.input[l.pos:])
 	l.width = Pos(w)
 	l.pos += l.width
 	return r
@@ -199,7 +203,7 @@ func (l *lexer) Run() {
 	close(l.tokens) // No more tokens will be delivered
 }
 
-func lex(name, input string) *lexer {
+func lex(name string, input []byte) *lexer {
 	l := &lexer{
 		name:   name,
 		input:  input,
@@ -254,7 +258,7 @@ func lexBlockComment(l *lexer) stateFn {
 	}
 	l.pos += Pos(len(blockCommentBegin))
 	// find end of comment or error if none
-	i := strings.Index(l.input[l.pos:], blockCommentEnd)
+	i := bytes.Index(l.input[l.pos:], []byte(blockCommentEnd))
 	if i < 0 {
 		return l.errorf("unclosed block comment")
 	}
@@ -302,18 +306,18 @@ Loop:
 func lexText(l *lexer) stateFn {
 	for {
 		if !l.ignoreSlash {
-			if strings.HasPrefix(l.input[l.pos:], lineCommentSlash) {
+			if bytes.HasPrefix(l.input[l.pos:], []byte(lineCommentSlash)) {
 				l.commentTyp = commentSlash
 				return lexLineComment // next state
 			}
 		}
 		if !l.ignoreHash {
-			if strings.HasPrefix(l.input[l.pos:], lineCommentHash) {
+			if bytes.HasPrefix(l.input[l.pos:], []byte(lineCommentHash)) {
 				l.commentTyp = commentHash
 				return lexLineComment
 			}
 		}
-		if strings.HasPrefix(l.input[l.pos:], blockCommentBegin) {
+		if bytes.HasPrefix(l.input[l.pos:], []byte(blockCommentBegin)) {
 			l.commentTyp = commentBlock
 			return lexBlockComment
 		}

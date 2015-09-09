@@ -15,7 +15,7 @@ import (
 
 type lexTest struct {
 	name   string
-	input  string
+	input  []byte
 	tokens []token
 }
 
@@ -24,57 +24,57 @@ var tNL = token{tokenNL, 0, "\n"}
 var tCR = token{tokenCR, 0, "\r"}
 
 var lexTests = []lexTest{
-	{"empty", "", []token{tEOF}},
-	{"justText", "hello world", []token{{tokenText, 0, "hello world"}, tEOF}},
-	{"simpleLineCommentSlashNL", "//this is a comment\nHello World\n",
+	{"empty", []byte(""), []token{tEOF}},
+	{"justText", []byte("hello world"), []token{{tokenText, 0, "hello world"}, tEOF}},
+	{"simpleLineCommentSlashNL", []byte("//this is a comment\nHello World\n"),
 		[]token{{tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"simpleLineCommentSlashCR", "//this is a comment\rHello World\r",
+	{"simpleLineCommentSlashCR", []byte("//this is a comment\rHello World\r"),
 		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"simpleLineCommentSlashCRNL", "//this is a comment\r\nHello World\r\n",
+	{"simpleLineCommentSlashCRNL", []byte("//this is a comment\r\nHello World\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"prePostLineCommentSlashNL", "//this is a comment\nHello World// another comment\n",
+	{"prePostLineCommentSlashNL", []byte("//this is a comment\nHello World// another comment\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashCR", "//this is a comment\rHello World// another comment\r",
+	{"prePostLineCommentSlashCR", []byte("//this is a comment\rHello World// another comment\r"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashCRNL", "//this is a comment\r\nHello World// another comment\r\n",
+	{"prePostLineCommentSlashCRNL", []byte("//this is a comment\r\nHello World// another comment\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"simpleLineCommentHashNL", "#this is a comment\nHello World\n",
+	{"simpleLineCommentHashNL", []byte("#this is a comment\nHello World\n"),
 		[]token{{tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"simpleLineCommentHashCR", "#this is a comment\rHello World\r",
+	{"simpleLineCommentHashCR", []byte("#this is a comment\rHello World\r"),
 		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"simpleLineCommentHashCRNL", "#this is a comment\r\nHello World\r\n",
+	{"simpleLineCommentHashCRNL", []byte("#this is a comment\r\nHello World\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"prePostLineCommentHashNL", "#this is a comment\nHello World# another comment\n",
+	{"prePostLineCommentHashNL", []byte("#this is a comment\nHello World# another comment\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentHashCR", "#this is a comment\rHello World# another comment\r",
+	{"prePostLineCommentHashCR", []byte("#this is a comment\rHello World# another comment\r"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentHashCRNL", "#this is a comment\r\nHello World# another comment\r\n",
+	{"prePostLineCommentHashCRNL", []byte("#this is a comment\r\nHello World# another comment\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashHashNL", "//this is a comment\nHello World# another comment\n",
+	{"prePostLineCommentSlashHashNL", []byte("//this is a comment\nHello World# another comment\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashHashCR", "//this is a comment\rHello World# another comment\r",
+	{"prePostLineCommentSlashHashCR", []byte("//this is a comment\rHello World# another comment\r"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashHashCRNL", "//this is a comment\r\nHello World# another comment\r\n",
+	{"prePostLineCommentSlashHashCRNL", []byte("//this is a comment\r\nHello World# another comment\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"simpleBlockCommentNL", "/*this is a comment*/\nHello World\n",
+	{"simpleBlockCommentNL", []byte("/*this is a comment*/\nHello World\n"),
 		[]token{tNL, {tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"simpleBlockCommentCR", "/*this is a comment*/\rHello World\r",
+	{"simpleBlockCommentCR", []byte("/*this is a comment*/\rHello World\r"),
 		[]token{tCR, {tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"simpleBlockCommentCRNL", "/*this is a comment*/\r\nHello World\r\n",
+	{"simpleBlockCommentCRNL", []byte("/*this is a comment*/\r\nHello World\r\n"),
 		[]token{tCR, tNL, {tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"prePostBlockCommentNL", "/*this is a comment\n*/Hello World/* another comment*/\n",
+	{"prePostBlockCommentNL", []byte("/*this is a comment\n*/Hello World/* another comment*/\n"),
 		[]token{{tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"prePostBlockCommentCR", "/*this is a comment\r*/Hello World/* another comment*/\r",
+	{"prePostBlockCommentCR", []byte("/*this is a comment\r*/Hello World/* another comment*/\r"),
 		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"prePostBlockCommentCRNL", "/*this is a comment\r\n*/Hello World/* another comment*/\r\n",
+	{"prePostBlockCommentCRNL", []byte("/*this is a comment\r\n*/Hello World/* another comment*/\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"simpleBlockCommentMultiLineNL", "/*this\n is a\n comment\n*/Hello World\n",
+	{"simpleBlockCommentMultiLineNL", []byte("/*this\n is a\n comment\n*/Hello World\n"),
 		[]token{{tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"simpleBlockCommentMultiLineCR", "/*this\r is a\r comment\r*/Hello World\r",
+	{"simpleBlockCommentMultiLineCR", []byte("/*this\r is a\r comment\r*/Hello World\r"),
 		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"simpleBlockCommentMultiLineCRNL", "/*this\r\n is a\r\n comment\r\n*/Hello World\r\n",
+	{"simpleBlockCommentMultiLineCRNL", []byte("/*this\r\n is a\r\n comment\r\n*/Hello World\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"noCommentQuotedText", `This is some text. "#This is not a comment // neither is this /* or this */" sooo, no comments!`,
+	{"noCommentQuotedText", []byte(`This is some text. "#This is not a comment // neither is this /* or this */" sooo, no comments!`),
 		[]token{{tokenText, 0, "This is some text. "}, {tokenQuotedText, 0, `"#This is not a comment // neither is this /* or this */"`}, {tokenText, 0, " sooo, no comments!"}, tEOF}},
 }
 
@@ -82,19 +82,19 @@ type lineLexTest struct {
 	name string
 	ignoreHash bool
 	ignoreSlash bool
-	input string
+	input []byte
 	tokens []token
 }
 
 var lineLexTests = []lineLexTest{
-		{"ignoreBothEmpty", true, true, "", []token{tEOF}},
-		{"ignoreBoth", true, true, "//this is a comment\rHello World# another comment\r",
+		{"ignoreBothEmpty", true, true, []byte(""), []token{tEOF}},
+		{"ignoreBoth", true, true, []byte("//this is a comment\rHello World# another comment\r"),
 			[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
-		{"ignoreNeither", false, false, "//this is a comment\rHello World# another comment\r",
+		{"ignoreNeither", false, false, []byte("//this is a comment\rHello World# another comment\r"),
 			[]token{{tokenText, 0, "Hello World"}, tEOF}},
-		{"ignoreSlash", false, true, "//this is a comment\rHello World# another comment\r",
+		{"ignoreSlash", false, true, []byte("//this is a comment\rHello World# another comment\r"),
 			[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World"}, tEOF}},
-		{"ignoreHash", true, false, "//this is a comment\rHello World# another comment\r",
+		{"ignoreHash", true, false, []byte("//this is a comment\rHello World# another comment\r"),
 			[]token{{tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
 }
 
