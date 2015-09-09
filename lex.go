@@ -112,16 +112,6 @@ func newLexer(input []byte ) *lexer {
 	}
 }
 
-// SetIgnoreHash set's whether or not # is the start of a line comment
-func (l *lexer) SetIgnoreHash(b bool) {
-		l.ignoreHash = b
-}
-
-// SetIgnoreSlash set's whether or not // is the start of a line comment
-func (l *lexer) SetIgnoreSlash(b bool) {
-		l.ignoreSlash = b
-}
-
 // accept consumes the next rune if it's from the valid set.
 func (l *lexer) accept(valid string) bool {
 	if strings.IndexRune(valid, l.next()) >= 0 {

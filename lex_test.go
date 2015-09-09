@@ -114,8 +114,8 @@ func collect(t *lexTest, left, right string) (tokens []token) {
 // collectLineTests handles testing of enabling/disabling of line comment styles
 func collectLineTest(t *lineLexTest) (tokens []token) {
 	l := newLexer(t.input)
-	l.SetIgnoreHash(t.ignoreHash)
-	l.SetIgnoreSlash(t.ignoreSlash)
+	l.ignoreHash = t.ignoreHash
+	l.ignoreSlash = t.ignoreSlash
 	go l.run()
 	for {
 		token := l.nextToken()
