@@ -90,7 +90,6 @@ const eof = -1
 type stateFn func(*lexer) stateFn
 
 type lexer struct {
-	name       string     // the name of the imput; used for errors
 	input      []byte     // the string being scanned
 	state      stateFn    // the next lexing function to enter
 	pos        Pos        // current position of this item
@@ -105,9 +104,8 @@ type lexer struct {
 	allowSingleQuote bool // whether or not `'` is supported as a quote char.
 }
 
-func NewLexer(name string, input []byte ) *lexer {
+func newLexer(input []byte ) *lexer {
 	return &lexer{
-		name: name,
 		input: input,
 		state:  lexText,
 		tokens: make(chan token, 2),
@@ -196,21 +194,20 @@ func (l *lexer) peek() rune {
 }
 
 // run lexes the input by executing state functions until the state is nil.
-func (l *lexer) Run() {
+func (l *lexer) run() {
 	for state := lexText; state != nil; {
 		state = state(l)
 	}
 	close(l.tokens) // No more tokens will be delivered
 }
 
-func lex(name string, input []byte) *lexer {
+func lex(input []byte) *lexer {
 	l := &lexer{
-		name:   name,
 		input:  input,
 		state:  lexText,
 		tokens: make(chan token, 2),
 	}
-	go l.Run() // concurrently run state machine
+	go l.run() // concurrently run state machine
 	return l
 }
 

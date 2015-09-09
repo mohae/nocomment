@@ -100,7 +100,7 @@ var lineLexTests = []lineLexTest{
 
 // collect gathers the emitted items into a slice.
 func collect(t *lexTest, left, right string) (tokens []token) {
-	l := lex(t.name, t.input)
+	l := lex(t.input)
 	for {
 		token := l.nextToken()
 		tokens = append(tokens, token)
@@ -113,10 +113,10 @@ func collect(t *lexTest, left, right string) (tokens []token) {
 
 // collectLineTests handles testing of enabling/disabling of line comment styles
 func collectLineTest(t *lineLexTest) (tokens []token) {
-	l := NewLexer(t.name, t.input)
+	l := newLexer(t.input)
 	l.SetIgnoreHash(t.ignoreHash)
 	l.SetIgnoreSlash(t.ignoreSlash)
-	go l.Run()
+	go l.run()
 	for {
 		token := l.nextToken()
 		tokens = append(tokens, token)
