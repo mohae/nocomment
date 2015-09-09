@@ -57,7 +57,7 @@ const (
 	tokenBlockCommentEnd   // */
 	tokenNL                // \n
 	tokenCR                // \r
-	tokenQuotedText       // "
+	tokenQuotedText        // "
 )
 
 var key = map[string]tokenType{
@@ -78,13 +78,6 @@ const (
 	commentHash
 	commentBlock
 )
-
-var commentStrings = [...]string{
-	none:         "none",
-	commentSlash: "line comment: //",
-	commentHash:  "line comment: #",
-	commentBlock: "block comment",
-}
 
 const eof = -1
 
@@ -120,13 +113,6 @@ func (l *lexer) accept(valid string) bool {
 	}
 	l.backup()
 	return false
-}
-
-// acceptRun consumes a run of runes from the valid set
-func (l *lexer) acceptRun(valid string) {
-	for strings.IndexRune(valid, l.next()) >= 0 {
-	}
-	l.backup()
 }
 
 // backup steps back one rune. Can be called only once per call of next.
