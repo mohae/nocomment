@@ -6,7 +6,7 @@ Nocomment removes comments. Comments can either be line comments or block commen
 ## Comments
 Comments will be elided from the text if the beginning comment delimiter is found and is not within quoted text: quoted text starts with a `"` and ends with a `"`.
 
-_Support for single-quotes, `'`, and/or raw quotes ```` may be added._
+_Support for single-quotes, `'`, and/or raw quotes ` may be added._
 
 ### Line comment
 For line comments, by default, nocomment interprets `#` and `//` as the beginning of a line comment. Line comments are terminated when a new line is encountered: `\r`, `\n`, or `\r\n`.
