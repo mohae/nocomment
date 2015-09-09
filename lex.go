@@ -78,7 +78,7 @@ const (
 	commentBlock
 )
 
-var CommentStrings = [...]string{
+var commentStrings = [...]string{
 	none:         "none",
 	commentSlash: "line comment: //",
 	commentHash:  "line comment: #",
