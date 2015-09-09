@@ -88,8 +88,6 @@ type stateFn func(*lexer) stateFn
 type lexer struct {
 	name       string     // the name of the imput; used for errors
 	input      string     // the string being scanned
-	rightDelim string     // start of whatever is being delimited
-	leftDelim  string     // end of whatever is being delimited
 	state      stateFn    // the next lexing function to enter
 	pos        Pos        // current position of this item
 	start      Pos        // start position of this item
@@ -261,10 +259,6 @@ func lexBlockComment(l *lexer) stateFn {
 		return l.errorf("unclosed block comment")
 	}
 	l.pos += Pos(i + len(blockCommentEnd))
-	if !strings.HasPrefix(l.input[l.pos:], l.rightDelim) {
-		return l.errorf("comment ends before */")
-	}
-	//l.pos += Pos(len(blockCommentEnd))
 	l.ignore()
 	return lexText
 	// comment is done, ignore processed runes and continue lexing
