@@ -32,7 +32,7 @@ func (t token) String() string {
 	case t.typ == tokenError:
 		return t.value
 	}
-	return fmt.Sprintf("%q", t.value)
+	return fmt.Sprintf("%s", t.value)
 }
 
 const (
