@@ -20,6 +20,8 @@ var stripperTests = []stripperTest{
 			"//this is a comment\rHello World# another comment\r"},
 		{"ignoreNeither", false, false, []byte("//this is a comment\rHello World# another comment\r"),
 			"Hello World"},
+      {"ignoreNeitherNoTrailingNL", false, false, []byte("//this is a comment\rHello World# another comment"),
+  			"Hello World"},
 		{"ignoreSlash", false, true, []byte("//this is a comment\rHello World# another comment\r"),
 			"//this is a comment\rHello World"},
 		{"ignoreHash", true, false, []byte("//this is a comment\rHello World# another comment\r"),
@@ -28,12 +30,12 @@ var stripperTests = []stripperTest{
       "\r\nHello World"},
 }
 
-type stripperTest struct {
+type cleanTest struct {
   name string
   input []byte
   output string
 }
-var stripperTests = []stripperTest{
+var cleanTests = []cleanTest{
 		{"Empty", []byte(""), ""},
 		{"line comments", []byte("//this is a comment\rHello World# another comment\r"), "Hello World"},
 		{"blockComments", []byte("/* block comment\r\n*/\r\nHello World"), "\r\nHello World"},
