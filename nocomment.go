@@ -35,3 +35,9 @@ func (s *Stripper) SetIgnoreHash(b bool) {
 func (s *Stripper) SetIgnoreSlash(b bool) {
   s.lexer.ignoreSlash = b
 }
+
+// Clean cleans the input of comments using nocomment's defaults.
+func Clean(input []byte) []byte {
+  s := NewStripper()
+  return s.Clean(input)
+}
