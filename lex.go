@@ -37,12 +37,12 @@ func (t token) String() string {
 }
 
 const (
-	lineCommentSlash = "//"
-	lineCommentHash = "#"
+	lineCommentSlash  = "//"
+	lineCommentHash   = "#"
 	blockCommentBegin = "/*"
- 	blockCommentEnd = "*/"
-	cr = '\r'
-	nl = '\n'
+	blockCommentEnd   = "*/"
+	cr                = '\r'
+	nl                = '\n'
 )
 
 type tokenType int
@@ -67,7 +67,6 @@ var key = map[string]tokenType{
 	"*/": tokenBlockCommentEnd,
 	"\n": tokenNL,
 	"\r": tokenCR,
-
 }
 
 type commentType int
@@ -84,23 +83,23 @@ const eof = -1
 type stateFn func(*lexer) stateFn
 
 type lexer struct {
-	input      []byte     // the string being scanned
-	state      stateFn    // the next lexing function to enter
-	pos        Pos        // current position of this item
-	start      Pos        // start position of this item
-	width      Pos        // width of last rune read from input
-	lastPos    Pos        // position of most recent item returned by nextItem
-	tokens     chan token // channel of scanned tokens
-	parenDepth int        // nesting depth of () exprs <- probably not needed
-	commentTyp commentType
-	ignoreHash bool
-	ignoreSlash bool
+	input            []byte     // the string being scanned
+	state            stateFn    // the next lexing function to enter
+	pos              Pos        // current position of this item
+	start            Pos        // start position of this item
+	width            Pos        // width of last rune read from input
+	lastPos          Pos        // position of most recent item returned by nextItem
+	tokens           chan token // channel of scanned tokens
+	parenDepth       int        // nesting depth of () exprs <- probably not needed
+	commentTyp       commentType
+	ignoreHash       bool
+	ignoreSlash      bool
 	allowSingleQuote bool // whether or not `'` is supported as a quote char.
 }
 
-func newLexer(input []byte ) *lexer {
+func newLexer(input []byte) *lexer {
 	return &lexer{
-		input: input,
+		input:  input,
 		state:  lexText,
 		tokens: make(chan token, 2),
 	}
@@ -257,7 +256,7 @@ func lexNewLine(l *lexer) stateFn {
 }
 
 // lexQuote processes everything within ""
-func lexQuote(l *lexer ) stateFn {
+func lexQuote(l *lexer) stateFn {
 	// consume the start quote
 	l.next()
 Loop:
@@ -276,6 +275,7 @@ Loop:
 	l.emit(tokenQuotedText)
 	return lexText
 }
+
 // stateFn to process input and tokenize things
 func lexText(l *lexer) stateFn {
 	for {

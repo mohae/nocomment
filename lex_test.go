@@ -79,23 +79,23 @@ var lexTests = []lexTest{
 }
 
 type lineLexTest struct {
-	name string
-	ignoreHash bool
+	name        string
+	ignoreHash  bool
 	ignoreSlash bool
-	input []byte
-	tokens []token
+	input       []byte
+	tokens      []token
 }
 
 var lineLexTests = []lineLexTest{
-		{"ignoreBothEmpty", true, true, []byte(""), []token{tEOF}},
-		{"ignoreBoth", true, true, []byte("//this is a comment\rHello World# another comment\r"),
-			[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
-		{"ignoreNeither", false, false, []byte("//this is a comment\rHello World# another comment\r"),
-			[]token{{tokenText, 0, "Hello World"}, tEOF}},
-		{"ignoreSlash", false, true, []byte("//this is a comment\rHello World# another comment\r"),
-			[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World"}, tEOF}},
-		{"ignoreHash", true, false, []byte("//this is a comment\rHello World# another comment\r"),
-			[]token{{tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
+	{"ignoreBothEmpty", true, true, []byte(""), []token{tEOF}},
+	{"ignoreBoth", true, true, []byte("//this is a comment\rHello World# another comment\r"),
+		[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
+	{"ignoreNeither", false, false, []byte("//this is a comment\rHello World# another comment\r"),
+		[]token{{tokenText, 0, "Hello World"}, tEOF}},
+	{"ignoreSlash", false, true, []byte("//this is a comment\rHello World# another comment\r"),
+		[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World"}, tEOF}},
+	{"ignoreHash", true, false, []byte("//this is a comment\rHello World# another comment\r"),
+		[]token{{tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
 }
 
 // collect gathers the emitted items into a slice.
