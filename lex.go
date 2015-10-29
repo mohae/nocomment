@@ -1,3 +1,4 @@
+package nocomment
 // Copyright 2015 Joel Scoble.
 // This code is governed by the MIT license, please
 // refer to the LICENSE file.
@@ -8,7 +9,6 @@
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-package nocomment
 
 import (
 	"bytes"

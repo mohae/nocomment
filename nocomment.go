@@ -1,6 +1,11 @@
-// Copyright 2015 Joel Scoble.
-// This code is governed by the MIT license, please
-// refer to the LICENSE file.
+// Package nocomment removes line and block comments from the provided bytes.
+//
+// Line comments start with either // or # and end when an EOL is encountered.
+// What to accept as line comments can be set.
+//
+// Block comments start with /* and end with */ and can span lines.
+//
+// Anything in quotes, "", is ignored.
 package nocomment
 
 // Stripper handles the elision of comments from text.
@@ -8,6 +13,7 @@ type Stripper struct {
 	*lexer
 }
 
+// NewStripper returns a Stripper.
 func NewStripper() *Stripper {
 	return &Stripper{lexer: newLexer([]byte(""))}
 }
