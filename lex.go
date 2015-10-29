@@ -159,7 +159,6 @@ func (l *lexer) nextToken() token {
 			l.state = l.state(l)
 		}
 	}
-	panic("not reached")
 }
 
 // peek returns but does not consume the next rune in the input
