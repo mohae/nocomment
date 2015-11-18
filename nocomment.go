@@ -1,11 +1,11 @@
 // Package nocomment removes line and block comments from the provided bytes.
 //
 // Line comments start with either // or # and end when an EOL is encountered.
-// What to accept as line comments can be set.
+// What to accept as line comments is configurable.
 //
 // Block comments start with /* and end with */ and can span lines.
 //
-// Anything in quotes, "", is ignored.
+// Anything within quotes, "", is ignored.
 package nocomment
 
 // Stripper handles the elision of comments from text.
@@ -34,14 +34,15 @@ func (s *Stripper) Clean(input []byte) []byte {
 	return output
 }
 
-// SetIgnoreHash sets whether or not the hash (octothorpe), `#`, should be
-// ignored as comments.
+// SetIgnoreHash sets whether or not hashes (octothorpes), '#', should be
+// ignored as comments.  If set to false, '#' will not be considered a
+// comment.
 func (s *Stripper) SetIgnoreHash(b bool) {
 	s.lexer.ignoreHash = b
 }
 
-// SetIgnoreSlash sets whether or not double slashes, `//`, should be
-// ignored as comments.
+// SetIgnoreSlash sets whether or not double slashes, '//', should be
+// ignored as comments.  If set to false, '//' will not be consider a comment.
 func (s *Stripper) SetIgnoreSlash(b bool) {
 	s.lexer.ignoreSlash = b
 }
