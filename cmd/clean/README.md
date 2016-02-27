@@ -11,7 +11,7 @@ Clean removes comments from files: takes an input file, strips all comments (#, 
 
 ## Help output
 
-	  Usage of .lean:
+	  Usage of clean:
 	    -i string
 		      input file: required (short)
 	    -input string
