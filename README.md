@@ -1,5 +1,5 @@
 # nocomment
-[![Build Status](https://travis-ci.org/mohae/nocomment.png)](https://travis-ci.org/mohae/nocomment)
+[![Build Status](https://travis-ci.org/mohae/nocomment.png)](https://travis-ci.org/mohae/nocomment) [![GoDoc](https://godoc.org/github.com/mohae/nocomment?status.svg)](https://godoc.org/github.com/mohae/nocomment)
 
 Nocomment removes comments.  Comments can either be line comments or block comments.
 
