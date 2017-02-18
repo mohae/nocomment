@@ -94,6 +94,14 @@ var stripperTests = []stripperTest{
 		"quotedAll", false, false, false, "\"/* this is a c comment */\"\"// this is a C++ comment\n\"Hello World\"# this is a shell comment\n\"",
 		"\"/* this is a c comment */\"\"// this is a C++ comment\n\"Hello World\"# this is a shell comment\n\"", "",
 	},
+	{
+		"brokenBlockQuote", false, false, false, "/* this is a c comment // this is a C++ comment\n\"Hello World\"# this is a shell comment\n\"",
+		"", "index 0: unclosed block comment",
+	},
+	{
+		"unclosedQuote", false, false, false, "hello \"/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"", "index 6: unterminated quoted string",
+	},
 }
 
 func TestStripper(t *testing.T) {
@@ -103,8 +111,10 @@ func TestStripper(t *testing.T) {
 		s.KeepCPPComments = test.keepCPPComments
 		s.KeepShellComments = test.keepShellComments
 		result, err := s.Clean([]byte(test.input))
-		if err != nil && err.Error() != test.err {
-			t.Errorf("%s: got %q want %q", test.name, err, test.err)
+		if err != nil {
+			if err.Error() != test.err {
+				t.Errorf("%s: got %q want %q", test.name, err, test.err)
+			}
 			continue
 		}
 		if err == nil && test.err != "" {

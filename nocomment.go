@@ -55,7 +55,7 @@ func (s *Stripper) Clean(input []byte) (b []byte, err error) {
 		case tokenEOF:
 			goto done
 		case tokenError:
-			return b, err
+			return b, t
 		}
 		b = append(b, t.String()...)
 	}

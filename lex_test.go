@@ -71,6 +71,9 @@ var lexTests = []lexTest{
 		[]token{token{tokenCComment, 0, "/*this\r\n is a\r\n comment\r\n*/"}, {tokenText, 0, "Hello World\r\n"}, tEOF}},
 	{"noCommentQuotedText", []byte(`This is some text. "#This is not a comment // neither is this /* or this */" sooo, no comments!`),
 		[]token{{tokenText, 0, "This is some text. "}, {tokenQuotedText, 0, `"#This is not a comment // neither is this /* or this */"`}, {tokenText, 0, " sooo, no comments!"}, tEOF}},
+	{"unclosed c comment", []byte("/* this is a broken block comment"), []token{{tokenError, 0, "unclosed block comment"}}},
+
+	{"unclosed quote", []byte("\" this is an unlcosed quote"), []token{{tokenError, 0, "unterminated quoted string"}}},
 }
 
 // collect gathers the emitted items into a slice.

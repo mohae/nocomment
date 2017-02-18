@@ -46,6 +46,10 @@ func (t token) String() string {
 	return fmt.Sprintf("%s", t.value)
 }
 
+func (t token) Error() string {
+	return fmt.Sprintf("index %d: %s", int(t.pos), t.value)
+}
+
 const (
 	cppComment    = "//"
 	shellComment  = "#"
