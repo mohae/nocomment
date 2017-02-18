@@ -65,6 +65,7 @@ const (
 	tokenShellComment  // #
 	tokenCCommentStart // /*
 	tokenCCommentEnd   // */
+	tokenCComment      // /* */
 	tokenQuotedText    // text that is quoted
 	tokenDoubleQuote   // "
 )
@@ -262,7 +263,7 @@ func lexCPPComment(l *lexer) stateFn {
 		}
 	}
 	// comment is done, ignore processed runes and continue lexing
-	l.ignore()
+	l.emit(tokenCPPComment)
 	return lexText
 }
 
@@ -276,7 +277,7 @@ func lexShellComment(l *lexer) stateFn {
 		}
 	}
 	// comment is done, ignore processed runes and continue lexing
-	l.ignore()
+	l.emit(tokenShellComment)
 	return lexText
 }
 
@@ -290,7 +291,7 @@ func lexCComment(l *lexer) stateFn {
 		return l.errorf("unclosed block comment")
 	}
 	l.pos += Pos(i + len(cCommentEnd))
-	l.ignore()
+	l.emit(tokenCComment)
 	return lexText
 	// comment is done, ignore processed runes and continue lexing
 }
