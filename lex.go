@@ -47,12 +47,12 @@ func (t token) String() string {
 }
 
 const (
-	lineCommentSlash  = "//"
-	lineCommentHash   = "#"
-	blockCommentBegin = "/*"
-	blockCommentEnd   = "*/"
-	cr                = '\r'
-	nl                = '\n'
+	cppComment    = "//"
+	shellComment  = "#"
+	cCommentBegin = "/*"
+	cCommentEnd   = "*/"
+	cr            = '\r'
+	nl            = '\n'
 )
 
 type tokenType int
@@ -60,32 +60,37 @@ type tokenType int
 const (
 	tokenError tokenType = iota
 	tokenEOF
-	tokenText              // anything that isn't one of the following
-	tokenCommentSlash      // //
-	tokenCommentHash       // #
-	tokenBlockCommentStart // /*
-	tokenBlockCommentEnd   // */
-	tokenNL                // \n
-	tokenCR                // \r
-	tokenQuotedText        // "
+	tokenText          // anything that isn't one of the following
+	tokenCPPComment    // //
+	tokenShellComment  // #
+	tokenCCommentStart // /*
+	tokenCCommentEnd   // */
+	tokenQuotedText    // text that is quoted
+	tokenDoubleQuote   // "
 )
 
 var key = map[string]tokenType{
-	"//": tokenCommentSlash,
-	"#":  tokenCommentHash,
-	"/*": tokenBlockCommentStart,
-	"*/": tokenBlockCommentEnd,
-	"\n": tokenNL,
-	"\r": tokenCR,
+	"//": tokenCPPComment,
+	"#":  tokenShellComment,
+	"/*": tokenCCommentStart,
+	"*/": tokenCCommentEnd,
+	"\"": tokenDoubleQuote,
 }
 
 type commentType int
 
 const (
 	none commentType = iota
-	commentSlash
-	commentHash
-	commentBlock
+	// C++ style comments
+	CPPComment
+	// shell style comments
+	ShellComment
+	// C style comments
+	CComment
+	// quote isn't a comment type but it's in here because as an unexported value
+	// because we need to handle quoted text (which may have comment delimeters in
+	// them which should not be processed as comments)
+	quote
 )
 
 const eof = -1
@@ -93,58 +98,32 @@ const eof = -1
 type stateFn func(*lexer) stateFn
 
 type lexer struct {
-	input            []byte     // the string being scanned
-	state            stateFn    // the next lexing function to enter
-	pos              Pos        // current position of this item
-	start            Pos        // start position of this item
-	width            Pos        // width of last rune read from input
-	lastPos          Pos        // position of most recent item returned by nextItem
-	tokens           chan token // channel of scanned tokens
-	parenDepth       int        // nesting depth of () exprs <- probably not needed
-	commentTyp       commentType
-	ignoreHash       bool
-	ignoreSlash      bool
-	allowSingleQuote bool // whether or not `'` is supported as a quote char.
+	input      []byte     // the string being scanned
+	state      stateFn    // the next lexing function to enter
+	pos        Pos        // current position of this item
+	start      Pos        // start position of this item
+	width      Pos        // width of last rune read from input
+	lastPos    Pos        // position of most recent item returned by nextItem
+	tokens     chan token // channel of scanned tokens
+	parenDepth int        // nesting depth of () exprs <- probably not needed
 }
 
-func newLexer(input []byte) *lexer {
-	return &lexer{
+func lex(input []byte) *lexer {
+	l := lexer{
 		input:  input,
 		state:  lexText,
 		tokens: make(chan token, 2),
 	}
+	go l.run()
+	return &l
 }
 
-// accept consumes the next rune if it's from the valid set.
-func (l *lexer) accept(valid string) bool {
-	if strings.IndexRune(valid, l.next()) >= 0 {
-		return true
+// run lexes the input by executing state functions until the state is nil.
+func (l *lexer) run() {
+	for state := lexText; state != nil; {
+		state = state(l)
 	}
-	l.backup()
-	return false
-}
-
-// backup steps back one rune. Can be called only once per call of next.
-func (l *lexer) backup() {
-	l.pos -= l.width
-}
-
-// emit passes an item back to the client.
-func (l *lexer) emit(t tokenType) {
-	l.tokens <- token{t, l.start, string(l.input[l.start:l.pos])}
-	l.start = l.pos
-}
-
-// error returns an error token and terminates the scan by passing back a nil
-// pointer that will be the next state, terminating l.run.
-func (l *lexer) errorf(format string, args ...interface{}) stateFn {
-	l.tokens <- token{tokenError, l.start, fmt.Sprintf(format, args...)}
-	return nil
-}
-
-// ignore skips over the pending input before this point.
-func (l *lexer) ignore() {
-	l.start = l.pos
+	close(l.tokens) // No more tokens will be delivered
 }
 
 // next returns the next rune in the input.
@@ -159,18 +138,6 @@ func (l *lexer) next() rune {
 	return r
 }
 
-// nextToken returns the next token from the input.
-func (l *lexer) nextToken() token {
-	for {
-		select {
-		case token := <-l.tokens:
-			return token
-		default:
-			l.state = l.state(l)
-		}
-	}
-}
-
 // peek returns but does not consume the next rune in the input
 func (l *lexer) peek() rune {
 	r := l.next()
@@ -178,51 +145,119 @@ func (l *lexer) peek() rune {
 	return r
 }
 
-// run lexes the input by executing state functions until the state is nil.
-func (l *lexer) run() {
-	for state := lexText; state != nil; {
-		state = state(l)
-	}
-	close(l.tokens) // No more tokens will be delivered
+// backup steps back one rune. Can be called only once per call of next.
+func (l *lexer) backup() {
+	l.pos -= l.width
 }
 
-func lex(input []byte) *lexer {
-	l := &lexer{
-		input:  input,
-		state:  lexText,
-		tokens: make(chan token, 2),
-	}
-	go l.run() // concurrently run state machine
-	return l
+// emit passes an item back to the client.
+func (l *lexer) emit(t tokenType) {
+	l.tokens <- token{t, l.start, string(l.input[l.start:l.pos])}
+	l.start = l.pos
 }
 
-// lexLineComment handles scanning of line comments.
-// Line comments start with either # or // and end with a new line.
-func lexLineComment(l *lexer) stateFn {
-	// based on type consume the start
+// ignore skips over the pending input before this point.
+func (l *lexer) ignore() {
+	l.start = l.pos
+}
+
+// accept consumes the next rune if it's from the valid set.
+func (l *lexer) accept(valid string) bool {
+	if strings.IndexRune(valid, l.next()) >= 0 {
+		return true
+	}
+	l.backup()
+	return false
+}
+
+// error returns an error token and terminates the scan by passing back a nil
+// pointer that will be the next state, terminating l.run.
+func (l *lexer) errorf(format string, args ...interface{}) stateFn {
+	l.tokens <- token{tokenError, l.start, fmt.Sprintf(format, args...)}
+	return nil
+}
+
+// nextToken returns the next token from the input.
+func (l *lexer) nextToken() token {
+	tkn := <-l.tokens
+	l.lastPos = tkn.pos
+	return tkn
+}
+
+// drain the channel so the lex go routine will exit: called by caller.
+func (l *lexer) drain() {
+	for range l.tokens {
+	}
+}
+
+// stateFn to process input and tokenize things
+func lexText(l *lexer) stateFn {
+	for {
+		is, typ := l.atComment()
+		if is {
+			if l.pos > l.start {
+				l.emit(tokenText)
+			}
+			switch typ {
+			case CPPComment:
+				return lexCPPComment
+			case ShellComment:
+				return lexShellComment
+			case CComment:
+				return lexCComment
+			case quote:
+				return lexQuote
+			}
+		}
+		if l.next() == eof {
+			break
+		}
+	}
+	// Correctly reached EOF.
 	if l.pos > l.start {
 		l.emit(tokenText)
 	}
-	switch l.commentTyp {
-	case commentSlash:
-		l.pos += Pos(len(lineCommentSlash))
-	case commentHash:
-		l.pos += Pos(len(lineCommentHash))
+	l.emit(tokenEOF) // Useful to make EOF a token
+	return nil       // Stop the run loop.
+}
+
+// atComment returns if the next rune(s) are either a comment or a quote and if
+// so, its type.
+func (l *lexer) atComment() (is bool, typ commentType) {
+	r, s := utf8.DecodeRune(l.input[l.pos:])
+	// with one character, only ShellComment or quote will match, We check to see
+	// which it was and if it was neither process an additional rune, which is
+	// probably unnecessary.
+	t, ok := key[string(r)]
+	if ok {
+		switch t {
+		case tokenShellComment:
+			return true, ShellComment
+		case tokenDoubleQuote:
+			return true, quote
+		}
 	}
+	// otherwise get a second rune
+	rr, _ := utf8.DecodeRune(l.input[int(l.pos)+s:])
+	t, ok = key[string(r)+string(rr)]
+	if !ok {
+		return false, none
+	}
+	switch t {
+	case tokenCPPComment:
+		return true, CPPComment
+	case tokenCCommentStart:
+		return true, CComment
+	}
+	return false, none
+}
+
+// lexCPPComment handles lexing of C++ style comments: // to \n or eof
+func lexCPPComment(l *lexer) stateFn {
 	// scan until the comment is consumed: EOL is encountered
 	for {
-		t := l.next()
-		if t == cr {
-			// if this is \r\n consume the \n
-			if l.peek() == nl {
-				t = l.next()
-			}
-			break
-		}
-		if t == nl {
-			break
-		}
-		if t == eof {
+		r := l.next()
+		if r == nl || r == eof {
 			break
 		}
 	}
@@ -231,37 +266,33 @@ func lexLineComment(l *lexer) stateFn {
 	return lexText
 }
 
-// lexBlockComment handles the scanning of block comments.
-// Block comments start with a /* and end with */. They may
-// span new lines
-func lexBlockComment(l *lexer) stateFn {
-	if l.pos > l.start {
-		l.emit(tokenText)
+// lexShellComment handles lexing of shell style comments: # to \n or eof
+func lexShellComment(l *lexer) stateFn {
+	// scan until the comment is consumed: EOL is encountered
+	for {
+		r := l.next()
+		if r == nl || r == eof {
+			break
+		}
 	}
-	l.pos += Pos(len(blockCommentBegin))
+	// comment is done, ignore processed runes and continue lexing
+	l.ignore()
+	return lexText
+}
+
+// lexCComment handles the lexing of C style comments: they start with /* and
+// end with */; they may span new lines
+func lexCComment(l *lexer) stateFn {
+	l.pos += Pos(len(cCommentBegin))
 	// find end of comment or error if none
-	i := bytes.Index(l.input[l.pos:], []byte(blockCommentEnd))
+	i := bytes.Index(l.input[l.pos:], []byte(cCommentEnd))
 	if i < 0 {
 		return l.errorf("unclosed block comment")
 	}
-	l.pos += Pos(i + len(blockCommentEnd))
+	l.pos += Pos(i + len(cCommentEnd))
 	l.ignore()
 	return lexText
 	// comment is done, ignore processed runes and continue lexing
-}
-
-// lexReturn handles a carriage return, `\r`.
-func lexReturn(l *lexer) stateFn {
-	l.pos += Pos(len(string(cr)))
-	l.emit(tokenCR)
-	return lexText
-}
-
-// lexNewLine handles a new line, `\n`
-func lexNewLine(l *lexer) stateFn {
-	l.pos += Pos(len(string(nl)))
-	l.emit(tokenNL)
-	return lexText
 }
 
 // lexQuote processes everything within ""
@@ -274,8 +305,9 @@ Loop:
 		case eof:
 			return l.errorf("unterminated quoted string")
 		case '\\':
-			if l.peek() == '"' {
-				l.next() // skip it
+			r := l.peek()
+			if r == '"' {
+				l.next() // skip it (this handles escaped quotes)
 			}
 		case '"':
 			break Loop
@@ -283,53 +315,4 @@ Loop:
 	}
 	l.emit(tokenQuotedText)
 	return lexText
-}
-
-// stateFn to process input and tokenize things
-func lexText(l *lexer) stateFn {
-	for {
-		if !l.ignoreSlash {
-			if bytes.HasPrefix(l.input[l.pos:], []byte(lineCommentSlash)) {
-				l.commentTyp = commentSlash
-				return lexLineComment // next state
-			}
-		}
-		if !l.ignoreHash {
-			if bytes.HasPrefix(l.input[l.pos:], []byte(lineCommentHash)) {
-				l.commentTyp = commentHash
-				return lexLineComment
-			}
-		}
-		if bytes.HasPrefix(l.input[l.pos:], []byte(blockCommentBegin)) {
-			l.commentTyp = commentBlock
-			return lexBlockComment
-		}
-		switch l.peek() {
-		case cr:
-			if l.pos > l.start {
-				l.emit(tokenText)
-			}
-			return lexReturn
-		case nl:
-			if l.pos > l.start {
-				l.emit(tokenText)
-			}
-			return lexNewLine
-		case '"':
-			if l.pos > l.start {
-				l.emit(tokenText)
-			}
-			return lexQuote
-		case eof:
-			goto Done
-		}
-		l.next()
-	}
-Done:
-	// Correctly reached EOF.
-	if l.pos > l.start {
-		l.emit(tokenText)
-	}
-	l.emit(tokenEOF) // Useful to make EOF a token
-	return nil       // Stop the run loop.
 }

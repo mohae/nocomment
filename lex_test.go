@@ -30,141 +30,90 @@ type lexTest struct {
 }
 
 var tEOF = token{tokenEOF, 0, ""}
-var tNL = token{tokenNL, 0, "\n"}
-var tCR = token{tokenCR, 0, "\r"}
 
 var lexTests = []lexTest{
 	{"empty", []byte(""), []token{tEOF}},
 	{"justText", []byte("hello world"), []token{{tokenText, 0, "hello world"}, tEOF}},
-	{"simpleLineCommentSlashNL", []byte("//this is a comment\nHello World\n"),
-		[]token{{tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"simpleLineCommentSlashCR", []byte("//this is a comment\rHello World\r"),
-		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"simpleLineCommentSlashCRNL", []byte("//this is a comment\r\nHello World\r\n"),
-		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"prePostLineCommentSlashNL", []byte("//this is a comment\nHello World// another comment\n"),
+	{"simpleLineCommentCPPNL", []byte("//this is a comment\nHello World\n"),
+		[]token{{tokenText, 0, "Hello World\n"}, tEOF}},
+	{"simpleLineCommentCPPCRNL", []byte("//this is a comment\r\nHello World\r\n"),
+		[]token{{tokenText, 0, "Hello World\r\n"}, tEOF}},
+	{"prePostLineCommentCPPNL", []byte("//this is a comment\nHello World// another comment\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashCR", []byte("//this is a comment\rHello World// another comment\r"),
+
+	{"prePostLineCommentCPPCRNL", []byte("//this is a comment\r\nHello World// another comment\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashCRNL", []byte("//this is a comment\r\nHello World// another comment\r\n"),
+	{"simpleLineCommentShellNL", []byte("#this is a comment\nHello World\n"),
+		[]token{{tokenText, 0, "Hello World\n"}, tEOF}},
+	{"simpleLineCommentShellCRNL", []byte("#this is a comment\r\nHello World\r\n"),
+		[]token{{tokenText, 0, "Hello World\r\n"}, tEOF}},
+	{"prePostLineCommentShellL", []byte("#this is a comment\nHello World# another comment\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"simpleLineCommentHashNL", []byte("#this is a comment\nHello World\n"),
-		[]token{{tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"simpleLineCommentHashCR", []byte("#this is a comment\rHello World\r"),
-		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"simpleLineCommentHashCRNL", []byte("#this is a comment\r\nHello World\r\n"),
-		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"prePostLineCommentHashNL", []byte("#this is a comment\nHello World# another comment\n"),
+	{"prePostLineCommentShellCRNL", []byte("#this is a comment\r\nHello World# another comment\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentHashCR", []byte("#this is a comment\rHello World# another comment\r"),
+
+	{"prePostLineCommentShellHashNL", []byte("//this is a comment\nHello World# another comment\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentHashCRNL", []byte("#this is a comment\r\nHello World# another comment\r\n"),
+	{"prePostLineCommentShellHashCRNL", []byte("//this is a comment\r\nHello World# another comment\r\n"),
 		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashHashNL", []byte("//this is a comment\nHello World# another comment\n"),
-		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashHashCR", []byte("//this is a comment\rHello World# another comment\r"),
-		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"prePostLineCommentSlashHashCRNL", []byte("//this is a comment\r\nHello World# another comment\r\n"),
-		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"simpleBlockCommentNL", []byte("/*this is a comment*/\nHello World\n"),
-		[]token{tNL, {tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"simpleBlockCommentCR", []byte("/*this is a comment*/\rHello World\r"),
-		[]token{tCR, {tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"simpleBlockCommentCRNL", []byte("/*this is a comment*/\r\nHello World\r\n"),
-		[]token{tCR, tNL, {tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"prePostBlockCommentNL", []byte("/*this is a comment\n*/Hello World/* another comment*/\n"),
-		[]token{{tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"prePostBlockCommentCR", []byte("/*this is a comment\r*/Hello World/* another comment*/\r"),
-		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"prePostBlockCommentCRNL", []byte("/*this is a comment\r\n*/Hello World/* another comment*/\r\n"),
-		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
-	{"simpleBlockCommentMultiLineNL", []byte("/*this\n is a\n comment\n*/Hello World\n"),
-		[]token{{tokenText, 0, "Hello World"}, tNL, tEOF}},
-	{"simpleBlockCommentMultiLineCR", []byte("/*this\r is a\r comment\r*/Hello World\r"),
-		[]token{{tokenText, 0, "Hello World"}, tCR, tEOF}},
-	{"simpleBlockCommentMultiLineCRNL", []byte("/*this\r\n is a\r\n comment\r\n*/Hello World\r\n"),
-		[]token{{tokenText, 0, "Hello World"}, tCR, tNL, tEOF}},
+	{"simpleCCommentNL", []byte("/*this is a comment*/\nHello World\n"),
+		[]token{{tokenText, 0, "\nHello World\n"}, tEOF}},
+	{"simpleCCommentCRNL", []byte("/*this is a comment*/\r\nHello World\r\n"),
+		[]token{{tokenText, 0, "\r\nHello World\r\n"}, tEOF}},
+	{"prePostCCommentNL", []byte("/*this is a comment\n*/Hello World/* another comment*/\n"),
+		[]token{{tokenText, 0, "Hello World"}, {tokenText, 0, "\n"}, tEOF}},
+
+	{"prePostCCommentCRNL", []byte("/*this is a comment\r\n*/Hello World/* another comment*/\r\n"),
+		[]token{{tokenText, 0, "Hello World"}, {tokenText, 0, "\r\n"}, tEOF}},
+	{"simpleCCommentMultiLineNL", []byte("/*this\n is a\n comment\n*/Hello World\n"),
+		[]token{{tokenText, 0, "Hello World\n"}, tEOF}},
+	{"simpleCCommentMultiLineCRNL", []byte("/*this\r\n is a\r\n comment\r\n*/Hello World\r\n"),
+		[]token{{tokenText, 0, "Hello World\r\n"}, tEOF}},
 	{"noCommentQuotedText", []byte(`This is some text. "#This is not a comment // neither is this /* or this */" sooo, no comments!`),
 		[]token{{tokenText, 0, "This is some text. "}, {tokenQuotedText, 0, `"#This is not a comment // neither is this /* or this */"`}, {tokenText, 0, " sooo, no comments!"}, tEOF}},
-}
-
-type lineLexTest struct {
-	name        string
-	ignoreHash  bool
-	ignoreSlash bool
-	input       []byte
-	tokens      []token
-}
-
-var lineLexTests = []lineLexTest{
-	{"ignoreBothEmpty", true, true, []byte(""), []token{tEOF}},
-	{"ignoreBoth", true, true, []byte("//this is a comment\rHello World# another comment\r"),
-		[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
-	{"ignoreNeither", false, false, []byte("//this is a comment\rHello World# another comment\r"),
-		[]token{{tokenText, 0, "Hello World"}, tEOF}},
-	{"ignoreSlash", false, true, []byte("//this is a comment\rHello World# another comment\r"),
-		[]token{{tokenText, 0, "//this is a comment"}, tCR, {tokenText, 0, "Hello World"}, tEOF}},
-	{"ignoreHash", true, false, []byte("//this is a comment\rHello World# another comment\r"),
-		[]token{{tokenText, 0, "Hello World# another comment"}, tCR, tEOF}},
 }
 
 // collect gathers the emitted items into a slice.
 func collect(t *lexTest, left, right string) (tokens []token) {
 	l := lex(t.input)
 	for {
-		token := l.nextToken()
-		tokens = append(tokens, token)
-		if token.typ == tokenEOF || token.typ == tokenError {
+		tkn := l.nextToken()
+		tokens = append(tokens, tkn)
+		if tkn.typ == tokenEOF || tkn.typ == tokenError {
 			break
 		}
 	}
 	return tokens
 }
 
-// collectLineTests handles testing of enabling/disabling of line comment styles
-func collectLineTest(t *lineLexTest) (tokens []token) {
-	l := newLexer(t.input)
-	l.ignoreHash = t.ignoreHash
-	l.ignoreSlash = t.ignoreSlash
-	go l.run()
-	for {
-		token := l.nextToken()
-		tokens = append(tokens, token)
-		if token.typ == tokenEOF || token.typ == tokenError {
-			break
-		}
-	}
-	return tokens
-}
-
-func equal(i1, i2 []token, checkPos bool) bool {
+func equal(t *testing.T, i int, i1, i2 []token) {
 	if len(i1) != len(i2) {
-		return false
+		t.Errorf("%d: got %d tokens want %d", i, len(i1), len(i2))
+		t.Errorf("%d: got\t%#v\nwant:\t%#v\n", i, i1, i2)
+		return
 	}
+	// pos isn't checked
 	for k := range i1 {
 		if i1[k].typ != i2[k].typ {
-			return false
+			t.Errorf("%d:%d:typ: got %v want %v\ttoken: %#v", i, k, i1[k].typ, i2[k].typ, i1[k])
+			continue
 		}
 		if i1[k].value != i2[k].value {
-			return false
-		}
-		if checkPos && i1[k].pos != i2[k].pos {
-			return false
+			t.Errorf("%d:%d:value: got %q want %q\ttoken: %#v", i, k, i1[k].value, i2[k].value, i1[k])
+			continue
 		}
 	}
-	return true
 }
 
 // test comment lexing
 func TestLex(t *testing.T) {
-	for _, test := range lexTests {
+	for i, test := range lexTests {
 		tokens := collect(&test, "", "")
-		if !equal(tokens, test.tokens, false) {
-			t.Errorf("%s: got \n\t%+v\nexpected\n\t%v", test.name, tokens, test.tokens)
-		}
+		equal(t, i, tokens, test.tokens)
 	}
 }
 
+/*
 // test enabling/disabling different line comment types
 func TestLineLex(t *testing.T) {
 	for _, test := range lineLexTests {
@@ -174,3 +123,4 @@ func TestLineLex(t *testing.T) {
 		}
 	}
 }
+*/
