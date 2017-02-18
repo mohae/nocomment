@@ -18,58 +18,101 @@ import (
 )
 
 type stripperTest struct {
-	name        string
-	ignoreHash  bool
-	ignoreSlash bool
-	input       []byte
-	output      string
+	name              string
+	keepCComments     bool
+	keepCPPComments   bool
+	keepShellComments bool
+	input             string
+	output            string
+	err               string
 }
 
 var stripperTests = []stripperTest{
-	{"ignoreBothEmpty", true, true, []byte(""), ""},
-	{"ignoreBoth", true, true, []byte("//this is a comment\rHello World# another comment\r"),
-		"//this is a comment\rHello World# another comment\r"},
-	{"ignoreNeither", false, false, []byte("//this is a comment\rHello World# another comment\r"),
-		"Hello World"},
-	{"ignoreNeitherNoTrailingNL", false, false, []byte("//this is a comment\rHello World# another comment"),
-		"Hello World"},
-	{"ignoreSlash", false, true, []byte("//this is a comment\rHello World# another comment\r"),
-		"//this is a comment\rHello World"},
-	{"ignoreHash", true, false, []byte("//this is a comment\rHello World# another comment\r"),
-		"Hello World# another comment\r"},
-	{"blockComments", false, false, []byte("/* block comment\r\n*/\r\nHello World"),
-		"\r\nHello World"},
-}
+	{"empty", false, false, false, "", "", ""},
+	{"keepAllEmpty", true, true, true, "", "", ""},
+	{"basic line", false, false, false, "Hello World", "Hello World", ""},
+	{
+		"remove all", false, false, false, "/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"Hello World", "",
+	},
+	{
+		"keepC", true, false, false, "/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"/* this is a c comment */Hello World", "",
+	},
 
-type cleanTest struct {
-	name   string
-	input  []byte
-	output string
-}
+	{
+		"keepCPP", false, true, false, "/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"// this is a C++ comment\nHello World", "",
+	},
+	{
+		"keepShell", false, false, true, "/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"Hello World# this is a shell comment\n", "",
+	},
+	{
+		"keepCCPP", true, true, false, "/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"/* this is a c comment */// this is a C++ comment\nHello World", "",
+	},
+	{
+		"keepCShell", true, false, true, "/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"/* this is a c comment */Hello World# this is a shell comment\n", "",
+	},
+	{
+		"keepCPPShell", false, true, true, "/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"// this is a C++ comment\nHello World# this is a shell comment\n", "",
+	},
 
-var cleanTests = []cleanTest{
-	{"Empty", []byte(""), ""},
-	{"line comments", []byte("//this is a comment\rHello World# another comment\r"), "Hello World"},
-	{"blockComments", []byte("/* block comment\r\n*/\r\nHello World"), "\r\nHello World"},
+	{
+		"keepAll", true, true, true, "/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n",
+		"/* this is a c comment */// this is a C++ comment\nHello World# this is a shell comment\n", "",
+	},
+	{
+		"quotedC", false, false, false, "\"/* this is a c comment */\"// this is a C++ comment\nHello World# this is a shell comment\n",
+		"\"/* this is a c comment */\"Hello World", "",
+	},
+	{
+		"quotedCPP", false, false, false, "/* this is a c comment */\"// this is a C++ comment\n\"Hello World# this is a shell comment\n",
+		"\"// this is a C++ comment\n\"Hello World", "",
+	},
+	{
+		"quotedShell", false, false, false, "/* this is a c comment */// this is a C++ comment\nHello World\"# this is a shell comment\n\"",
+		"Hello World\"# this is a shell comment\n\"", "",
+	},
+	{
+		"quotedCCPP", false, false, false, "\"/* this is a c comment */\"\"// this is a C++ comment\n\"Hello World# this is a shell comment\n",
+		"\"/* this is a c comment */\"\"// this is a C++ comment\n\"Hello World", "",
+	},
+
+	{
+		"quotedCShell", false, false, false, "\"/* this is a c comment */\"// this is a C++ comment\nHello World\"# this is a shell comment\n\"",
+		"\"/* this is a c comment */\"Hello World\"# this is a shell comment\n\"", "",
+	},
+	{
+		"quotedCPPShell", false, false, false, "/* this is a c comment */\"// this is a C++ comment\n\"Hello World\"# this is a shell comment\n\"",
+		"\"// this is a C++ comment\n\"Hello World\"# this is a shell comment\n\"", "",
+	},
+	{
+		"quotedAll", false, false, false, "\"/* this is a c comment */\"\"// this is a C++ comment\n\"Hello World\"# this is a shell comment\n\"",
+		"\"/* this is a c comment */\"\"// this is a C++ comment\n\"Hello World\"# this is a shell comment\n\"", "",
+	},
 }
 
 func TestStripper(t *testing.T) {
+	var s Stripper
 	for _, test := range stripperTests {
-		s := NewStripper()
-		s.SetIgnoreHash(test.ignoreHash)
-		s.SetIgnoreSlash(test.ignoreSlash)
-		result := s.Clean(test.input)
-		if string(result) != test.output {
-			t.Errorf("%s: expected %s got %s\n", test.name, test.output, string(result))
+		s.KeepCComments = test.keepCComments
+		s.KeepCPPComments = test.keepCPPComments
+		s.KeepShellComments = test.keepShellComments
+		result, err := s.Clean([]byte(test.input))
+		if err != nil && err.Error() != test.err {
+			t.Errorf("%s: got %q want %q", test.name, err, test.err)
+			continue
 		}
-	}
-}
-
-func TestClean(t *testing.T) {
-	for _, test := range cleanTests {
-		result := Clean(test.input)
+		if err == nil && test.err != "" {
+			t.Errorf("%s: got no error; wanted %q", test.name, test.err)
+			continue
+		}
 		if string(result) != test.output {
-			t.Errorf("%s: expected %s got %s\n", test.name, test.output, string(result))
+			t.Errorf("%s: got %q want %q\n", test.name, string(result), test.output)
 		}
 	}
 }

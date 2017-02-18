@@ -21,47 +21,45 @@
 // Anything within quotes, "", is ignored.
 package nocomment
 
-// Stripper handles the elision of comments from text.
+// Stripper handles the elision of comments from text. The style of comments to
+// elide is configurable: all supported styles are elided by default.
 type Stripper struct {
-	*lexer
-}
-
-// NewStripper returns a Stripper.
-func NewStripper() *Stripper {
-	return &Stripper{lexer: newLexer([]byte(""))}
+	// KeepCComments: do not elide C style comments (/* */).
+	KeepCComments bool
+	// KeepCPPComments: do not elide C++ style comments (//).
+	KeepCPPComments bool
+	// KeepShellComments: do not elide C style comments (#).
+	KeepShellComments bool
 }
 
 // Clean removes comments from the input.
-func (s *Stripper) Clean(input []byte) []byte {
+func (s *Stripper) Clean(input []byte) (b []byte, err error) {
 	// make output the same cap as input
-	output := make([]byte, 0, len(input))
-	s.lexer.input = input
-	go s.lexer.run()
+	b = make([]byte, 0, len(input))
+	l := lex(input)
 	for {
-		token := s.lexer.nextToken()
-		if token.typ == tokenEOF || token.typ == tokenError {
-			break
+		t := l.nextToken()
+		switch t.typ {
+		case tokenCComment:
+			if !s.KeepCComments { // if C comments are to be elided, don't append this token
+				continue
+			}
+		case tokenCPPComment:
+			if !s.KeepCPPComments { // if C++ comments are to be elided, don't append this token
+				continue
+			}
+		case tokenShellComment:
+			if !s.KeepShellComments { // if shell comments are to be elided, don't append this token
+				continue
+			}
+		case tokenEOF:
+			goto done
+		case tokenError:
+			return b, err
 		}
-		output = append(output, token.String()...)
+		b = append(b, t.String()...)
 	}
-	return output
-}
 
-// SetIgnoreHash sets whether or not hashes (octothorpes), '#', should be
-// ignored as comments.  If set to false, '#' will not be considered a
-// comment.
-func (s *Stripper) SetIgnoreHash(b bool) {
-	s.lexer.ignoreHash = b
-}
-
-// SetIgnoreSlash sets whether or not double slashes, '//', should be
-// ignored as comments.  If set to false, '//' will not be consider a comment.
-func (s *Stripper) SetIgnoreSlash(b bool) {
-	s.lexer.ignoreSlash = b
-}
-
-// Clean cleans the input of comments using nocomment's defaults.
-func Clean(input []byte) []byte {
-	s := NewStripper()
-	return s.Clean(input)
+done:
+	return b, nil
 }
