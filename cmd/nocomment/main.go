@@ -44,8 +44,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	s := nocomment.NewStripper()
-	b = s.Clean(b)
+	var s nocomment.Stripper
+	b, err = s.Clean(b)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: error removing comments: %s\n", app, err)
+		os.Exit(1)
+	}
+
 	err = ioutil.WriteFile(out, b, 0644)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: error writing file: %s\n", app, err)
