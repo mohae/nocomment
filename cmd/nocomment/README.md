@@ -1,17 +1,17 @@
-clean
-=====
+nocomment
+=========
 
-Clean removes comments from files: takes an input file, strips all comments (#, //, /*...*/), and writes the result to an output file.
+Nocomment removes comments from files: takes an input file, strips all comments (#, //, /*...*/), and writes the result to an output file.
 
 ## Usage
 
-	  go get github.com/mohae/nocomment/cmd/clean
+	  go install github.com/mohae/nocomment/cmd/nocomment
 
 	  clean -i input.file -o output.file
 
 ## Help output
 
-	  Usage of clean:
+	  Usage of nocomment:
 	    -i string
 		      input file: required (short)
 	    -input string
