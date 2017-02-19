@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/mohae/nocomment"
 )
 
-var in, out string
+var (
+	app     = filepath.Base(os.Args[0])
+	in, out string
+)
 
 func init() {
 	flag.StringVar(&in, "input", "", "input file: required")
@@ -22,14 +26,14 @@ func main() {
 	flag.Parse()
 
 	if in == "" {
-		fmt.Fprintln(os.Stderr, "\"input\" is a required flag")
+		fmt.Fprintf(os.Stderr, "%s: \"input\" is a required flag\n", app)
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	// If the output wasn't specified, save
 	if out == "" {
-		fmt.Fprintln(os.Stderr, "\"output\" is a required flag")
+		fmt.Fprintf(os.Stderr, "\"output\" is a required flag\n")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -44,7 +48,7 @@ func main() {
 	b = s.Clean(b)
 	err = ioutil.WriteFile(out, b, 0644)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintf(os.Stderr, "%s: error writing file: %s\n", app, err)
 		os.Exit(1)
 	}
 	os.Exit(0)
