@@ -40,7 +40,7 @@ var lexTests = []lexTest{
 		[]token{token{tokenCPPComment, 0, "//this is a comment\r\n"}, {tokenText, 0, "Hello World\r\n"}, tEOF}},
 	{"prePostLineCommentCPPNL", []byte("//this is a comment\nHello World// another comment\n"),
 		[]token{token{tokenCPPComment, 0, "//this is a comment\n"}, {tokenText, 0, "Hello World"}, token{tokenCPPComment, 0, "// another comment\n"}, tEOF}},
-
+	// 5
 	{"prePostLineCommentCPPCRNL", []byte("//this is a comment\r\nHello World// another comment\r\n"),
 		[]token{token{tokenCPPComment, 0, "//this is a comment\r\n"}, {tokenText, 0, "Hello World"}, token{tokenCPPComment, 0, "// another comment\r\n"}, tEOF}},
 	{"simpleLineCommentShellNL", []byte("#this is a comment\nHello World\n"),
@@ -51,7 +51,7 @@ var lexTests = []lexTest{
 		[]token{token{tokenShellComment, 0, "#this is a comment\n"}, {tokenText, 0, "Hello World"}, token{tokenShellComment, 0, "# another comment\r\n"}, tEOF}},
 	{"prePostLineCommentShellCRNL", []byte("#this is a comment\r\nHello World# another comment\r\n"),
 		[]token{token{tokenShellComment, 0, "#this is a comment\r\n"}, {tokenText, 0, "Hello World"}, token{tokenShellComment, 0, "# another comment\r\n"}, tEOF}},
-
+	// 10
 	{"prePostLineCommentShellHashNL", []byte("//this is a comment\nHello World# another comment\n"),
 		[]token{token{tokenCPPComment, 0, "//this is a comment\n"}, {tokenText, 0, "Hello World"}, token{tokenShellComment, 0, "# another comment\n"}, tEOF}},
 	{"prePostLineCommentShellHashCRNL", []byte("//this is a comment\r\nHello World# another comment\r\n"),
@@ -62,7 +62,7 @@ var lexTests = []lexTest{
 		[]token{token{tokenCComment, 0, "/*this is a comment*/"}, {tokenText, 0, "\r\nHello World\r\n"}, tEOF}},
 	{"prePostCCommentNL", []byte("/*this is a comment\n*/Hello World/* another comment*/\n"),
 		[]token{token{tokenCComment, 0, "/*this is a comment\n*/"}, {tokenText, 0, "Hello World"}, token{tokenCComment, 0, "/* another comment*/"}, {tokenText, 0, "\n"}, tEOF}},
-
+	// 15
 	{"prePostCCommentCRNL", []byte("/*this is a comment\r\n*/Hello World/* another comment*/\r\n"),
 		[]token{token{tokenCComment, 0, "/*this is a comment\r\n*/"}, {tokenText, 0, "Hello World"}, token{tokenCComment, 0, "/* another comment*/"}, {tokenText, 0, "\r\n"}, tEOF}},
 	{"simpleCCommentMultiLineNL", []byte("/*this\n is a\n comment\n*/Hello World\n"),
@@ -72,7 +72,7 @@ var lexTests = []lexTest{
 	{"noCommentQuotedText", []byte(`This is some text. "#This is not a comment // neither is this /* or this */" sooo, no comments!`),
 		[]token{{tokenText, 0, "This is some text. "}, {tokenQuotedText, 0, `"#This is not a comment // neither is this /* or this */"`}, {tokenText, 0, " sooo, no comments!"}, tEOF}},
 	{"unclosed c comment", []byte("/* this is a broken block comment"), []token{{tokenError, 0, "unclosed block comment"}}},
-
+	// 20
 	{"unclosed quote", []byte("\" this is an unlcosed quote"), []token{{tokenError, 0, "unterminated quoted string"}}},
 }
 

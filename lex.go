@@ -92,10 +92,11 @@ const (
 	ShellComment
 	// C style comments
 	CComment
-	// quote isn't a comment type but it's in here because as an unexported value
-	// because we need to handle quoted text (which may have comment delimeters in
-	// them which should not be processed as comments)
-	quote
+	// quotes aren't comment types but they are here as an unexported value
+	// because we need to handle quoted text (which may have comment delimeters
+	// in them which should not be processed as comments)
+	// feels weird: -mohae
+	doubleQuote // ""
 )
 
 const eof = -1
@@ -210,8 +211,12 @@ func lexText(l *lexer) stateFn {
 				return lexShellComment
 			case CComment:
 				return lexCComment
-			case quote:
-				return lexQuote
+			//case quoteSingle:
+			//return lexSingleQuote
+			case doubleQuote:
+				return lexDoubleQuote
+				//case quoteTick:
+				//return lexQuote
 			}
 		}
 		if l.next() == eof {
@@ -239,7 +244,7 @@ func (l *lexer) atComment() (is bool, typ commentType) {
 		case tokenShellComment:
 			return true, ShellComment
 		case tokenDoubleQuote:
-			return true, quote
+			return true, doubleQuote
 		}
 	}
 	// otherwise get a second rune
@@ -301,7 +306,7 @@ func lexCComment(l *lexer) stateFn {
 }
 
 // lexQuote processes everything within ""
-func lexQuote(l *lexer) stateFn {
+func lexDoubleQuote(l *lexer) stateFn {
 	// consume the start quote
 	l.next()
 Loop:
@@ -311,8 +316,12 @@ Loop:
 			return l.errorf("unterminated quoted string")
 		case '\\':
 			r := l.peek()
-			if r == '"' {
-				l.next() // skip it (this handles escaped quotes)
+			// There are two things to look for: is the next char another \ or is it a quote?
+			switch r {
+			case '\\':
+				l.next() // it doesn't start an escape so it is consumed
+			case '"':
+				l.next() // it's an escaped quote so it should be consumed as it's not the end of the quoted text.
 			}
 		case '"':
 			break Loop

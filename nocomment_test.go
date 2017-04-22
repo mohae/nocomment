@@ -126,3 +126,29 @@ func TestStripper(t *testing.T) {
 		}
 	}
 }
+
+// This tests that a bug that resulted in unterminated quotes string error
+// when a windows path separator was right before a quote. Since \ can denote
+// an escape sequence, we need to figure out if it is an escape or not. If it
+// is an escape and it escapes a quote, then it's not the end of a quote.
+func TestUnterminatedQuotedStringBug(t *testing.T) {
+	tests := []struct {
+		val      string
+		expected string
+	}{
+		{`"inline=dir c:\\"`, `"inline=dir c:\\"`},
+		// if this wasn't handled properly, it would be considers an unterminated quoted string.
+		{`"inline=dir \"  "`, `"inline=dir \"  "`},
+	}
+
+	var s Stripper
+	for i, test := range tests {
+		result, err := s.Clean([]byte(test.val))
+		if err != nil {
+			t.Fatalf("%d: unexpected error: %s", i, err)
+		}
+		if string(result) != test.expected {
+			t.Errorf("%d: got %q want %q\n", i, string(result), test.expected)
+		}
+	}
+}
